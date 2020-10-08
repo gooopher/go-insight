@@ -16,7 +16,6 @@ func NewLockRedis(lockkey string, timeout int, client *redis.Client) Lock {
 		LockKey:     lockkey,
 		TimeOut:     timeout,
 		Token:       token,
-		MutexLock:   sync.Mutex{},
 		RedisClient: client,
 	}
 }
@@ -25,7 +24,6 @@ type lockRedis struct {
 	LockKey     string
 	TimeOut     int
 	Token       int
-	MutexLock   sync.Mutex
 	RedisClient *redis.Client
 }
 
