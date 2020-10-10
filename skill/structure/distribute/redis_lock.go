@@ -83,15 +83,16 @@ func (l *lockRedis) Unlock() error {
 执行成功或失败，会释放锁
 */
 func (l *lockRedis) Proccess(dealFunc func() error) error {
+	done := make(chan bool, 1)
+	var err error
+
 	defer func() {
-		err := l.Unlock()
+		err = l.Unlock()
 		if err != nil {
-			fmt.Println(err, 1111)
+			fmt.Println(err)
 		}
 	}()
 
-	done := make(chan bool, 1)
-	var err error
 	go func() {
 		err = dealFunc()
 		done <- true
