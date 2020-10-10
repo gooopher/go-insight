@@ -5,15 +5,19 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"math/rand"
-	"sync"
 	"time"
+)
+
+const (
+	preix      string = "insight_"
+	tickerTime int    = 100 // 检查业务代码时间 单位ms
 )
 
 func NewLockRedis(lockkey string, timeout int, client *redis.Client) Lock {
 	s := rand.NewSource(time.Now().UnixNano())
 	token := rand.New(s).Intn(1000000)
 	return &lockRedis{
-		LockKey:     lockkey,
+		LockKey:     preix + lockkey,
 		TimeOut:     timeout,
 		Token:       token,
 		RedisClient: client,
@@ -32,14 +36,14 @@ type lockRedis struct {
 若发生竞态，延时队列获取解锁消息，再次加锁
 */
 func (l *lockRedis) Lock() error {
-	r, err := l.RedisClient.Do("SET", l.LockKey, l.Token, "EX", l.TimeOut, "NX").Result()
-	if err != nil {
+	r, err := l.RedisClient.Do("SET", l.LockKey, l.Token, "EX", l.TimeOut*1000, "NX").Result()
+	if err != nil && err != redis.Nil {
 		return err
 	}
 	if r == nil {
 		for {
 			q, err := l.RedisClient.BLPop(time.Second, l.LockKey+"_queue").Result()
-			if err != nil {
+			if err != nil && err != redis.Nil {
 				return err
 			}
 			if len(q) > 0 {
@@ -56,16 +60,19 @@ func (l *lockRedis) Lock() error {
 */
 func (l *lockRedis) Unlock() error {
 	value, err := l.RedisClient.Get(l.LockKey).Result()
-	if err != nil {
+	if err != nil && err != redis.Nil {
 		return err
 	}
+
 	if value != fmt.Sprintf("%d", l.Token) {
 		return errors.New("unlock client not lock client")
 	}
 	err = l.RedisClient.Del(l.LockKey).Err()
 	if err != nil {
-		_, err = l.RedisClient.RPush(l.LockKey+"_queue", 1).Result()
+		return err
+
 	}
+	_, err = l.RedisClient.RPush(l.LockKey+"_queue", 1).Result()
 
 	return err
 }
@@ -76,7 +83,12 @@ func (l *lockRedis) Unlock() error {
 执行成功或失败，会释放锁
 */
 func (l *lockRedis) Proccess(dealFunc func() error) error {
-	defer l.Unlock()
+	defer func() {
+		err := l.Unlock()
+		if err != nil {
+			fmt.Println(err, 1111)
+		}
+	}()
 
 	done := make(chan bool, 1)
 	var err error
@@ -85,8 +97,7 @@ func (l *lockRedis) Proccess(dealFunc func() error) error {
 		done <- true
 	}()
 
-	timeInterval := (l.TimeOut / 10) * 8
-	ticker := time.NewTicker(time.Second * time.Duration(timeInterval))
+	ticker := time.NewTicker(time.Duration(tickerTime) * time.Millisecond)
 	for {
 		var isOver bool
 		select {
@@ -95,8 +106,9 @@ func (l *lockRedis) Proccess(dealFunc func() error) error {
 				isOver = true
 			}
 		case <-ticker.C:
-			_, err = l.RedisClient.Expire(l.LockKey, time.Duration(l.TimeOut)).Result()
+			_, err = l.RedisClient.Expire(l.LockKey, time.Duration(l.TimeOut)*time.Second).Result()
 		}
+
 		if isOver {
 			break
 		}
