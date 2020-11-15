@@ -29,7 +29,7 @@ func TestLockRedis(t *testing.T) {
 	}
 
 	wg := sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(i int) {
 			lockIns := NewLockRedis("book", 1, redisClient)
@@ -38,7 +38,7 @@ func TestLockRedis(t *testing.T) {
 				log.Fatalf("lock fail: %s", err.Error())
 			}
 			err = lockIns.Proccess(func() error {
-				fmt.Printf("task : %d success\n", i)
+				fmt.Printf("task %d success\n", i)
 				return nil
 			})
 			if err != nil {

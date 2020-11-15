@@ -34,7 +34,13 @@
 - 延时队列。获取锁失败，客户端延时获取锁释放消息；c1释放锁发布消息，
 - 发布订阅功能，获取锁失败，订阅锁释放消息；c1释放锁发布消息；
 
-https://redisbook.readthedocs.io/en/latest/feature/pubsub.html
+code：
+- [redis分布式锁](https://github.com/gooopher/go-insight/blob/develop/skill/structure/distribute/redis_lock_test.go)
+
+参考：https://redisbook.readthedocs.io/en/latest/feature/pubsub.html
 
 3. 使用zookeeper
+
 https://juejin.im/post/6844903729406148622
+
+- [ ] 有时间研究下zookeeper的使用。
