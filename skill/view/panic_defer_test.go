@@ -9,6 +9,10 @@ func TestDeferCall(t *testing.T) {
 	defer_call()
 }
 
+func TestDeferCall2(t *testing.T) {
+	panic_recover()
+}
+
 func defer_call() {
 	defer func() { fmt.Println("打印前") }()
 	defer func() { fmt.Println("打印中") }()
@@ -31,4 +35,19 @@ panic内置函数停止当前goroutine的正常执行，当函数F调用panic时
 中所defer函数，此过程会一直继续执行到goroutine所有的函数。
 
 参考：https://www.jianshu.com/p/63e3d57f285f
+*/
+
+func panic_recover() {
+	defer func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println(r)
+			}
+		}()
+	}()
+	panic(1)
+}
+
+/**
+recover没有被defer方法直接调用，会失效
 */
