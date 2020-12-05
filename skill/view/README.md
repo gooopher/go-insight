@@ -6,7 +6,6 @@ go test skill/view/chan_closed_test.go
 ```
 
 - defer、panic、recover问题
-- [defer、panic用法](https://github.com/gooopher/go-insight/blob/master/skill/view/panic_defer_test.go)
     - panic后defer
     ```go
     package main
@@ -49,6 +48,7 @@ go test skill/view/chan_closed_test.go
     ```
   
 - go中struct能不能做比较
+
 struct的结构不一致就是单独的类型，不同的类型不能做比较，同一类型的实例值可以做比较，但实例不可以做比较，因为其是指针类型。
 
 - context包的用途
@@ -58,6 +58,7 @@ struct的结构不一致就是单独的类型，不同的类型不能做比较�
 - 主协程如何等其余协程完再操作
 
 - map如何实现顺序读
+
 使用slice指定顺序取map值
 
 - 下面这段代码输出什么，说明原因
